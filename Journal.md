@@ -10,5 +10,7 @@ Analisi dei modelli trovati e riduzione della scelta a 4 modelli con diversi gra
 ## 06/05/17
 Inizio analisi dei modelli con Unity e primo tentativo di importare e modificare file .obj in Three.js
 
-## 08/05/17
-Creazione di shader elementari per un di freno a disco.
+## 08/05/17 - /05/17
+Creazione di shader elementari per un modello di freno a disco.
+Lavoro sugli shader elementari e comprensione del funzionamento delle varie equazioni e delle potenzialità della creaione degli shader.
+Aggiunta di una enviroment map trovata sul sito gratuito http://www.humus.name/index.php?page=Textures&start=88.
