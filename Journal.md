@@ -16,3 +16,4 @@ Lavoro sugli shader elementari e comprensione del funzionamento delle varie equa
 Aggiunta di una enviroment map trovata sul sito gratuito http://www.humus.name/index.php?page=Textures&start=88.
 Scelto il modello finale di una minipala gommata della Cat.
 Modificati gli shader e creato un primo file per la consegna.
+Download di una texture per la pelle del sedile e dei joystick dal sito gratuito http://naldzgraphics.net.
