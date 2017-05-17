@@ -1,0 +1,376 @@
+<html>
+	<head>
+		<title>Progettino 2 : Bobcat</title>
+		<style>
+		
+		body {
+			font-family: Monospace;
+			background-color: #f0f0f0;
+			margin: 0px;
+			overflow: hidden;
+		}
+		
+		canvas { 
+			width: 100%; 
+			height: 100%;
+		}
+	
+		</style>
+		<script src="lib/three.min.js"></script>
+		<script src="lib/stats.min.js"></script>
+		<script src="lib/Coordinates.js"></script>
+		<script src="lib/OrbitControls.js"></script>
+		<script src="lib/OBJLoader.js"></script>
+		<script src='lib/dat.gui.min.js'></script>
+	</head>
+	<body>
+		
+		<script id="vertexShader" type="x-shader/x-vertex">
+			varying vec3 vNormal;
+			varying vec3 vPosition;
+			varying vec2 uVv;
+
+			void main() {
+				vec4 vPos = modelViewMatrix * vec4( position, 1.0 );
+				vPosition = vPos.xyz;
+				vNormal = normalMatrix * normal;
+				uVv = uv;
+				gl_Position = projectionMatrix * vPos;
+			}
+		</script>
+
+		<script id="fragmentShader" type="x-shader/x-fragment">
+			varying vec3 vNormal;
+			varying vec3 vPosition;
+			varying vec2 uVv;
+			uniform vec3 pointLightPosition; // in world space
+			uniform vec3 clight;
+			uniform float roughness;
+			uniform int metalness;
+			uniform vec3 materialColor;
+			uniform samplerCube envMap;
+			const float PI = 3.14159;
+
+			#define saturate(a) clamp( a, 0.0, 1.0 )
+
+			vec3 FSchlick(float lDoth, vec3 spec) {
+				return (spec + (vec3(1.0) - spec) * pow(1.0 - lDoth, 5.0));
+			}
+
+			float DGGX(float nDoth, float alpha) {
+				float alpha2 = alpha*alpha;
+				float d = nDoth*nDoth*(alpha2-1.0)+1.0;
+				return (  alpha2 / (PI*d*d));
+			}
+
+			float G1(float dotProduct, float k) {
+				return (dotProduct / (dotProduct*(1.0-k) + k) );
+			}
+
+			float GSmith(float nDotv, float nDotl) {
+				float k = roughness*roughness;
+				return G1(nDotl,k)*G1(nDotv,k);
+			}
+
+			vec3 inverseTransformDirection( in vec3 dir, in mat4 matrix ) {
+				return normalize( ( vec4( dir, 0.0 ) * matrix ).xyz );
+			}
+
+			float getSpecularMIPLevel( const in float blinnShininessExponent, const in int maxMIPLevel ) {
+		 		float maxMIPLevelScalar = float( maxMIPLevel );
+		 		float desiredMIPLevel = maxMIPLevelScalar - 0.79248 - 0.5 * log2( pow( blinnShininessExponent, 2.0 ) + 1.0 );
+		 		return clamp( desiredMIPLevel, 0.0, maxMIPLevelScalar );
+		 	}
+
+			float GGXRoughnessToBlinnExponent( const in float ggxRoughness ) {
+		  		return ( 2.0 / pow( ggxRoughness + 0.0001 , 2.0 ) - 2.0 );
+		  	}
+
+		  	vec3 BRDF_Specular_GGX_Environment( vec3 normal, vec3 viewDir, const in vec3 cspec, const in float roughness ) {
+
+				float dotNV = saturate( dot( normal, viewDir ) );
+				const vec4 c0 = vec4( - 1, - 0.0275, - 0.572, 0.022 );
+				const vec4 c1 = vec4( 1, 0.0425, 1.04, - 0.04 );
+				vec4 r = roughness * c0 + c1;
+				float a004 = min( r.x * r.x, exp2( - 9.28 * dotNV ) ) * r.x + r.y;
+				vec2 AB = vec2( -1.04, 1.04 ) * a004 + r.zw;
+				return cspec * AB.x + AB.y;
+
+			}
+
+			void main() {
+				vec3 cspec;
+				vec3 cdiff;
+				if(metalness == 1){
+					cspec = materialColor;
+					cdiff = vec3( 0.01 );
+				}else{
+					cdiff = materialColor;
+					cspec = vec3( 0.04 );
+				}
+
+				vec4 lPosition = viewMatrix * vec4( pointLightPosition, 1.0 );
+				vec3 l = normalize(lPosition.xyz - vPosition.xyz);
+				vec3 n = normalize( vNormal ); 											// interpolation destroys normalization, so we have to normalize
+				vec3 v = normalize( -vPosition);
+				vec3 vReflect = reflect(vPosition, n);
+				vec3 h = normalize( v + l);
+				vec3 r = inverseTransformDirection( vReflect, viewMatrix );
+
+				// small quantity to prevent divisions by 0
+				float nDotl = max(dot( n, l ),0.000001);
+				float lDoth = max(dot( l, h ),0.000001);
+				float nDoth = max(dot( n, h ),0.000001);
+				float vDoth = max(dot( v, h ),0.000001);
+				float nDotv = max(dot( n, v ),0.000001);
+
+				float blinnShininessExponent = GGXRoughnessToBlinnExponent(roughness);
+				float specularMIPLevel = getSpecularMIPLevel(blinnShininessExponent ,8 );
+
+				vec3 envLight = textureCubeLodEXT( envMap, vec3(-r.x, r.yz), specularMIPLevel ).rgb;
+				envLight = pow( envLight, vec3(2.2));
+
+				vec3 fresnel = FSchlick(nDotv, cspec);
+
+				vec3 BRDF = (vec3(1.0) - fresnel) * cdiff/PI + ( fresnel * GSmith(nDotv, nDotl) * DGGX(nDoth, roughness*roughness) )/ (4.0 * nDotl * nDotv);
+
+				vec3 outRadiance =   envLight*BRDF_Specular_GGX_Environment(n, v, cspec, roughness) + PI * clight * nDotl * BRDF;
+
+				gl_FragColor = vec4(pow( abs(outRadiance), vec3(1.0/2.2)), 1.0);
+			}
+
+		</script>
+
+		<script>
+		
+		var scene, camera, renderer, controls, stats, gui;
+
+		var lightParameters = {
+			red: 1.0,
+			green: 1.0,
+			blue: 1.0,
+			intensity: 6.0
+		}
+
+		var loader = new THREE.CubeTextureLoader();
+		loader.setPath( 'cubemap/strada/' );
+		var textureCube = loader.load( [
+			'posx.png', 'negx.png',
+			'posy.png', 'negy.png',
+			'posz.png', 'negz.png'
+		] );
+
+		textureCube.minFilter = THREE.LinearMipMapLinearFilter;
+
+		materialExtensions = {
+				derivatives: true, // set to use derivatives
+				shaderTextureLOD: true // set to use shader texture LOD
+			};
+
+		var uniforms= new Array(10);
+		for(var  i=0; i<10; i++){
+			uniforms[i] = {
+				materialColor : {type: "vec3", value: new THREE.Vector3()},
+				metalness: {type: "int", value: 1},
+				roughness: {type: "float", value: 0.1},
+				pointLightPosition:	{ type: "v3", value: new THREE.Vector3() },
+				clight:	{ type: "v3", value: new THREE.Vector3() },
+				envMap:	{ type: "t", value: textureCube}
+			};
+		}
+		
+		var light = new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 16), new THREE.MeshBasicMaterial ({color: 0xffff00, wireframe:true}) );
+		light.position.set( 0.0, 40.0, 50.0 );
+		for(var  i=0; i<10; i++){
+			uniforms[i].pointLightPosition.value = new THREE.Vector3(light.position.x, light.position.y, light.position.z);
+		}
+		
+		function Start() {
+			scene = new THREE.Scene();
+			camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			renderer = new THREE.WebGLRenderer( {antialias: true} );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setClearColor( 0xf0f0f0 );
+			document.body.appendChild( renderer.domElement );
+			
+			camera.position.set(0,20,30);
+			camera.lookAt( new THREE.Vector3(0,0,0));
+			scene.add( camera );
+
+			scene.background = textureCube;
+
+			stats = new Stats();
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.top = '0px';
+			document.body.appendChild( stats.domElement );
+
+			// uncomment if you need to draw coordinate axes when building the scene
+			Coordinates.drawAllAxes();
+			
+			controls = new THREE.OrbitControls( camera, renderer.domElement );
+			controls.addEventListener( 'change', Render );
+			controls.minDistance = 10;
+			controls.maxDistance = 200;
+			//controls.maxPolarAngle = Math.PI / 2;
+			controls.enablePan = true;				//movement with rigth click
+			controls.target.copy( scene.position );
+			controls.update();
+
+			scene.add( light );
+
+			var materialSteel = new THREE.ShaderMaterial( {
+					uniforms: uniforms[0],
+					vertexShader: document.getElementById( 'vertexShader' ).textContent,
+					fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+					extensions: materialExtensions
+				}),
+				materialStellB = new THREE.ShaderMaterial( {
+					uniforms: uniforms[1],
+					vertexShader: document.getElementById( 'vertexShader' ).textContent,
+					fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+					extensions: materialExtensions
+				}),
+				materialStellY = new THREE.ShaderMaterial( {
+					uniforms: uniforms[2],
+					vertexShader: document.getElementById( 'vertexShader' ).textContent,
+					fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+					extensions: materialExtensions
+				}),
+				materialRubber = new THREE.ShaderMaterial( {
+					uniforms: uniforms[3],
+					vertexShader: document.getElementById( 'vertexShader' ).textContent,
+					fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+					extensions: materialExtensions
+				}),
+				material = new THREE.ShaderMaterial( {
+					uniforms: uniforms[4],
+					vertexShader: document.getElementById( 'vertexShader' ).textContent,
+					fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+					extensions: materialExtensions
+				});
+
+			materialSteel.uniforms.materialColor.value = new THREE.Vector3(0.560, 0.570, 0.580);						//iron
+			materialSteel.uniforms.roughness.value = 0.2;
+		    materialSteel.uniforms.metalness.value = 1;
+
+		    materialStellB.uniforms.materialColor.value = new THREE.Vector3(0, 0, 0);										//black
+			materialStellB.uniforms.roughness.value = 0.6;
+		    materialStellB.uniforms.metalness.value = 1;
+
+
+		    materialStellY.uniforms.materialColor.value = new THREE.Vector3(1, 1, 0);									//yellow
+			materialStellY.uniforms.roughness.value = 0.6;
+		    materialStellY.uniforms.metalness.value = 1;
+
+		    materialRubber.uniforms.materialColor.value = new THREE.Vector3(0, 0, 0);									//black
+			materialRubber.uniforms.roughness.value = 0.8;
+		    materialRubber.uniforms.metalness.value = 0;
+
+		    material.uniforms.materialColor.value = new THREE.Vector3(1, 0, 0);											//red
+			material.uniforms.roughness.value = 0.8;
+		    material.uniforms.metalness.value = 0;
+
+
+			var loader = new THREE.OBJLoader();
+		    loader.load( './Modelli/Escavatore/Cams650.obj',
+				function ( group ) {
+					var length = group.children.length;
+					for(var i = 0; i < length; i++){
+						var child = group.children[ i ];
+						if ( child.name.includes('Cabine_Out') || child.name.includes('Cabin_Out2')  || child.name.includes('Screw_of_Cabin007') || child.name.includes('Object058') || child.name.includes('Object059') || child.name.includes('Cabin_In') || child.name.includes('Object031') || child.name.includes('Object056') || child.name.includes('Object060') || child.name.includes('Object062') || child.name.includes('Object096')) {
+							geometry = child.geometry;
+							mesh = new THREE.Mesh( geometry, materialStellB );
+							mesh.scale.multiplyScalar( 0.1 );
+							mesh.rotateY ( Math.PI );
+	 						//mesh.matrixAutoUpdate = false;
+							scene.add( mesh );
+						}else if (child.name.includes('Object026') || child.name.includes('Screw_of_Wheel1') || child.name.includes('Screw_of_Wheel2') || child.name.includes('Screw_of_Wheel3') || child.name.includes('Screw_of_Wheel4') || child.name.includes('Wheel1') || child.name.includes('Wheel2') || child.name.includes('Wheel3') || child.name.includes('Wheel4')|| child.name.includes('Object033') || child.name.includes('Object067') || child.name.includes('Object066') || child.name.includes('Object057') || child.name.includes('Object070') || child.name.includes('Object061') || child.name.includes('Object063') || child.name.includes('Hydraulics003') || child.name.includes('Hydraulics1') || child.name.includes('HP_Details1') || child.name.includes('HP_Details2') || child.name.includes('Object036') || child.name.includes('Screw_of_Mirror') || child.name.includes('Lower_Frame2') || child.name.includes('Lower_Frame004') || child.name.includes('Object068') || child.name.includes('Object069') || child.name.includes('HP_wheel2') || child.name.includes('Object092') || child.name.includes('Object093') || child.name.includes('Object094') || child.name.includes('Object095')) {
+							geometry = child.geometry;
+							mesh = new THREE.Mesh( geometry, materialSteel );
+							mesh.scale.multiplyScalar( 0.1 );
+							mesh.rotateY ( Math.PI );
+	 						//mesh.matrixAutoUpdate = false;
+							scene.add( mesh );
+						}else if(child.name.includes('Engine_Covers') || child.name.includes('Engine_Covers2') || child.name.includes('Lower_Frame1') || child.name.includes('Boom') || child.name.includes('Screw_of_Frame')){ 
+		            		geometry = child.geometry;
+							mesh = new THREE.Mesh( geometry, materialStellY );
+							mesh.scale.multiplyScalar( 0.1 ); 
+							mesh.rotateY ( Math.PI );
+	 						//mesh.matrixAutoUpdate = false;
+							scene.add( mesh );
+						}else if(child.name.includes('Object091') || child.name.includes('Object090') || child.name.includes('Object089') || child.name.includes('Object088') || child.name.includes('Hydraulics_spline1') || child.name.includes('Hydraulics_spline2')){
+							geometry = child.geometry;
+							mesh = new THREE.Mesh( geometry, materialRubber );
+							mesh.scale.multiplyScalar( 0.1 );
+							mesh.rotateY ( Math.PI );
+	 						//mesh.matrixAutoUpdate = false;
+							scene.add( mesh );
+						}else{
+							geometry = child.geometry;
+							mesh = new THREE.Mesh( geometry, material );
+							mesh.scale.multiplyScalar( 0.1 );
+							mesh.rotateY ( Math.PI );
+	 						//mesh.matrixAutoUpdate = false;
+							scene.add( mesh );
+
+						}
+					}
+
+				}
+			);
+
+		}
+
+		function Update() {
+			requestAnimationFrame( Update );
+			//controls.update();  
+			stats.update();
+			Render();
+		}
+		
+		function Render() {
+			updateUniforms();
+			renderer.render(scene, camera);
+		}
+		
+		function clearGui() {
+
+				if ( gui ) gui.destroy();
+				gui = new dat.GUI();
+				gui.open();
+
+			}
+
+			function buildGui() {
+
+				clearGui();
+				lightSettings = gui.addFolder('Light Parameters');
+				lightSettings.add(lightParameters,'red').min(0).max(1).onChange( function(newVal) { Render() });
+				lightSettings.add(lightParameters,'green').min(0).max(1).onChange( function(newVal) { Render() });
+				lightSettings.add(lightParameters,'blue').min(0).max(1).onChange( function(newVal) { Render() });
+				lightSettings.add(lightParameters,'intensity').min(0).max(10).onChange( function(newVal) { Render()});
+
+			}
+
+			function updateUniforms() {
+
+				//uniforms.cspec.value = new THREE.Vector3(materialParameter.cspec_red, materialParameter.cspec_green, materialParameter.cspec_blue);
+				//uniforms.cdiff.value = new THREE.Vector3(materialParameter.cdiff_red, materialParameter.cdiff_green, materialParameter.cdiff_blue);
+				//uniforms.roughness.value = materialParameter.roughness>0.0 ? materialParameter.roughness:0.01;
+				for(var  i=0; i<10; i++){
+					uniforms[i].clight.value = new THREE.Vector3(
+						lightParameters.red * lightParameters.intensity,
+					    lightParameters.green * lightParameters.intensity,
+						lightParameters.blue * lightParameters.intensity
+					);
+				}
+			}
+
+			Start();
+			//buildGui();
+			Update();
+		
+		</script>
+	</body>
+</html>
