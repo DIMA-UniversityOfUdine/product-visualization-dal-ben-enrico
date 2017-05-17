@@ -134,7 +134,7 @@
 
 				vec3 BRDF = (vec3(1.0) - fresnel) * cdiff/PI + ( fresnel * GSmith(nDotv, nDotl) * DGGX(nDoth, roughness*roughness) )/ (4.0 * nDotl * nDotv);
 
-				vec3 outRadiance =   envLight*BRDF_Specular_GGX_Environment(n, v, cspec, roughness) + PI * clight * nDotl * BRDF;
+				vec3 outRadiance = envLight * BRDF_Specular_GGX_Environment(n, v, cspec, roughness) + PI * clight * nDotl * BRDF;
 
 				gl_FragColor = vec4(pow( abs(outRadiance), vec3(1.0/2.2)), 1.0);
 			}
@@ -180,7 +180,7 @@
 		}
 		
 		var light = new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 16), new THREE.MeshBasicMaterial ({color: 0xffff00, wireframe:true}) );
-		light.position.set( 0.0, 40.0, 50.0 );
+		light.position.set( 0.0, 50.0, 30.0 );
 		for(var  i=0; i<10; i++){
 			uniforms[i].pointLightPosition.value = new THREE.Vector3(light.position.x, light.position.y, light.position.z);
 		}
@@ -210,10 +210,10 @@
 			
 			controls = new THREE.OrbitControls( camera, renderer.domElement );
 			controls.addEventListener( 'change', Render );
-			controls.minDistance = 10;
-			controls.maxDistance = 200;
+			controls.minDistance = 25;
+			controls.maxDistance = 50;
 			//controls.maxPolarAngle = Math.PI / 2;
-			controls.enablePan = true;				//movement with rigth click
+			controls.enablePan = false;				//movement with rigth click
 			controls.target.copy( scene.position );
 			controls.update();
 
@@ -243,15 +243,27 @@
 					fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
 					extensions: materialExtensions
 				}),
-				material = new THREE.ShaderMaterial( {
+				materialPlasticB = new THREE.ShaderMaterial( {
 					uniforms: uniforms[4],
+					vertexShader: document.getElementById( 'vertexShader' ).textContent,
+					fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+					extensions: materialExtensions
+				}),
+				materialPlasticR = new THREE.ShaderMaterial( {
+					uniforms: uniforms[5],
+					vertexShader: document.getElementById( 'vertexShader' ).textContent,
+					fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+					extensions: materialExtensions
+				}),
+				material = new THREE.ShaderMaterial( {
+					uniforms: uniforms[9],
 					vertexShader: document.getElementById( 'vertexShader' ).textContent,
 					fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
 					extensions: materialExtensions
 				});
 
 			materialSteel.uniforms.materialColor.value = new THREE.Vector3(0.560, 0.570, 0.580);						//iron
-			materialSteel.uniforms.roughness.value = 0.2;
+			materialSteel.uniforms.roughness.value = 0.3;
 		    materialSteel.uniforms.metalness.value = 1;
 
 		    materialStellB.uniforms.materialColor.value = new THREE.Vector3(0, 0, 0);										//black
@@ -260,12 +272,20 @@
 
 
 		    materialStellY.uniforms.materialColor.value = new THREE.Vector3(1, 1, 0);									//yellow
-			materialStellY.uniforms.roughness.value = 0.6;
+			materialStellY.uniforms.roughness.value = 0.7;
 		    materialStellY.uniforms.metalness.value = 1;
 
 		    materialRubber.uniforms.materialColor.value = new THREE.Vector3(0, 0, 0);									//black
-			materialRubber.uniforms.roughness.value = 0.8;
+			materialRubber.uniforms.roughness.value = 0.95;
 		    materialRubber.uniforms.metalness.value = 0;
+
+		    materialPlasticB.uniforms.materialColor.value = new THREE.Vector3(0, 0, 0);									//black
+			materialPlasticB.uniforms.roughness.value = 0.6;
+		    materialPlasticB.uniforms.metalness.value = 0;
+
+		    materialPlasticR.uniforms.materialColor.value = new THREE.Vector3(1, 0, 0);									//red
+			materialPlasticR.uniforms.roughness.value = 0.6;
+		    materialPlasticR.uniforms.metalness.value = 0;
 
 		    material.uniforms.materialColor.value = new THREE.Vector3(1, 0, 0);											//red
 			material.uniforms.roughness.value = 0.8;
@@ -278,20 +298,22 @@
 					var length = group.children.length;
 					for(var i = 0; i < length; i++){
 						var child = group.children[ i ];
-						if ( child.name.includes('Cabine_Out') || child.name.includes('Cabin_Out2')  || child.name.includes('Screw_of_Cabin007') || child.name.includes('Object058') || child.name.includes('Object059') || child.name.includes('Cabin_In') || child.name.includes('Object031') || child.name.includes('Object056') || child.name.includes('Object060') || child.name.includes('Object062') || child.name.includes('Object096')) {
+						if ( child.name.includes('Cabine_Out') || child.name.includes('Cabin_Out2')  || child.name.includes('Screw_of_Cabin007') || child.name.includes('Object058') || child.name.includes('Object059') || child.name.includes('Cabin_In') || child.name.includes('Object031') || child.name.includes('Object056') || child.name.includes('Object060') || child.name.includes('Object062') || child.name.includes('Object096') || child.name.includes('Object078') || child.name.includes('Object079') || child.name.includes('Object084') || child.name.includes('Object085') || child.name.includes('Object075') || child.name.includes('Object076') || child.name.includes('Plane005') || child.name.includes('Plane006')) {
 							geometry = child.geometry;
 							mesh = new THREE.Mesh( geometry, materialStellB );
 							mesh.scale.multiplyScalar( 0.1 );
 							mesh.rotateY ( Math.PI );
 	 						//mesh.matrixAutoUpdate = false;
 							scene.add( mesh );
-						}else if (child.name.includes('Object026') || child.name.includes('Screw_of_Wheel1') || child.name.includes('Screw_of_Wheel2') || child.name.includes('Screw_of_Wheel3') || child.name.includes('Screw_of_Wheel4') || child.name.includes('Wheel1') || child.name.includes('Wheel2') || child.name.includes('Wheel3') || child.name.includes('Wheel4')|| child.name.includes('Object033') || child.name.includes('Object067') || child.name.includes('Object066') || child.name.includes('Object057') || child.name.includes('Object070') || child.name.includes('Object061') || child.name.includes('Object063') || child.name.includes('Hydraulics003') || child.name.includes('Hydraulics1') || child.name.includes('HP_Details1') || child.name.includes('HP_Details2') || child.name.includes('Object036') || child.name.includes('Screw_of_Mirror') || child.name.includes('Lower_Frame2') || child.name.includes('Lower_Frame004') || child.name.includes('Object068') || child.name.includes('Object069') || child.name.includes('HP_wheel2') || child.name.includes('Object092') || child.name.includes('Object093') || child.name.includes('Object094') || child.name.includes('Object095')) {
+						}else if (child.name.includes('Object026') || child.name.includes('Screw_of_Wheel1') || child.name.includes('Screw_of_Wheel2') || child.name.includes('Screw_of_Wheel3') || child.name.includes('Screw_of_Wheel4') || child.name.includes('Wheel1') || child.name.includes('Wheel2') || child.name.includes('Wheel3') || child.name.includes('Wheel4')|| child.name.includes('Object033') || child.name.includes('Object067') || child.name.includes('Object066') || child.name.includes('Object057') || child.name.includes('Object070') || child.name.includes('Object061') || child.name.includes('Object063') || child.name.includes('Object064') || child.name.includes('Object065') || child.name.includes('Hydraulics003') || child.name.includes('Hydraulics1')  || child.name.includes('Object036') || child.name.includes('Lower_Frame2') || child.name.includes('Lower_Frame004') || child.name.includes('Object068') || child.name.includes('Object069') || child.name.includes('HP_wheel2') || child.name.includes('Object092') || child.name.includes('Object093') || child.name.includes('Object094') || child.name.includes('Object095')  || child.name.includes('Joystick')) {
 							geometry = child.geometry;
 							mesh = new THREE.Mesh( geometry, materialSteel );
 							mesh.scale.multiplyScalar( 0.1 );
 							mesh.rotateY ( Math.PI );
 	 						//mesh.matrixAutoUpdate = false;
 							scene.add( mesh );
+
+							//|| child.name.includes('HP_Details1') || child.name.includes('HP_Details2') || child.name.includes('Screw_of_Mirror')
 						}else if(child.name.includes('Engine_Covers') || child.name.includes('Engine_Covers2') || child.name.includes('Lower_Frame1') || child.name.includes('Boom') || child.name.includes('Screw_of_Frame')){ 
 		            		geometry = child.geometry;
 							mesh = new THREE.Mesh( geometry, materialStellY );
@@ -299,14 +321,30 @@
 							mesh.rotateY ( Math.PI );
 	 						//mesh.matrixAutoUpdate = false;
 							scene.add( mesh );
-						}else if(child.name.includes('Object091') || child.name.includes('Object090') || child.name.includes('Object089') || child.name.includes('Object088') || child.name.includes('Hydraulics_spline1') || child.name.includes('Hydraulics_spline2')){
+						}else if(child.name.includes('Object091') || child.name.includes('Object090') || child.name.includes('Object089') || child.name.includes('Object088') || child.name.includes('Hydraulics_spline1') || child.name.includes('Hydraulics_spline2') || child.name.includes('Object077') || child.name.includes('Object073') || child.name.includes('Object074') || child.name.includes('Object086') || child.name.includes('Object087') || child.name.includes('Object071') || child.name.includes('Object072') || child.name.includes('Object055')){
 							geometry = child.geometry;
 							mesh = new THREE.Mesh( geometry, materialRubber );
 							mesh.scale.multiplyScalar( 0.1 );
 							mesh.rotateY ( Math.PI );
 	 						//mesh.matrixAutoUpdate = false;
 							scene.add( mesh );
-						}else{
+						}else if(child.name.includes('Object049') || child.name.includes('Object050') || child.name.includes('Object034') || child.name.includes('Object035') || child.name.includes('Object041') || child.name.includes('Object042') || child.name.includes('Object043') || child.name.includes('Object044') || child.name.includes('Object045') || child.name.includes('Object046') || child.name.includes('Object080') || child.name.includes('Object081') || child.name.includes('Operator_place') || child.name.includes('Operator_place3') || child.name.includes('Object082') || child.name.includes('Object083')){ 
+							geometry = child.geometry;
+							mesh = new THREE.Mesh( geometry, materialPlasticB );
+							mesh.scale.multiplyScalar( 0.1 );
+							mesh.rotateY ( Math.PI );
+	 						//mesh.matrixAutoUpdate = false;
+							scene.add( mesh );
+
+							//|| child.name.includes('Object039') Object040
+						}else if(child.name.includes('Object051') || child.name.includes('Object052')){ 
+		            		geometry = child.geometry;
+							mesh = new THREE.Mesh( geometry, materialPlasticR );
+							mesh.scale.multiplyScalar( 0.1 ); 
+							mesh.rotateY ( Math.PI );
+	 						//mesh.matrixAutoUpdate = false;
+							scene.add( mesh );
+						}/*else{
 							geometry = child.geometry;
 							mesh = new THREE.Mesh( geometry, material );
 							mesh.scale.multiplyScalar( 0.1 );
@@ -314,7 +352,7 @@
 	 						//mesh.matrixAutoUpdate = false;
 							scene.add( mesh );
 
-						}
+						}*/
 					}
 
 				}
