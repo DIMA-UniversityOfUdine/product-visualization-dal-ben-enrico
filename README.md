@@ -11,7 +11,7 @@ Ho deciso di scaricare una texture che rappresenta la pelle nera lavorata per al
 Caricamento del medello all'interno della scena di threejs e creazione di shader per rendere il colore e i riflessi più realistici.
 Per le equazioni degli shader mi sono basato su quelli fatti in classe.
 Ho creato diversi materiali che si basano su questi shader così da poter specificare materiali metallici e plastici, con colori diversi.
-Attualmente c'è solo una luce puntuale a illuminare l'oggetto e una enviromet map per dargli n aspetto puù realistico, specialmente per i metalli.
+Attualmente c'è solo una luce puntuale a illuminare l'oggetto e una enviromet map per dargli un aspetto puù realistico, specialmente per i metalli.
 
 ## Aggiunte future
 Se la base del progetto soddisfa i requisiti minimi pensavo di aggiungere alcuni particolari : 
