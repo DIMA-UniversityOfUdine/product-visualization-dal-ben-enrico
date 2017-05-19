@@ -17,3 +17,7 @@ Aggiunta di una enviroment map trovata sul sito gratuito http://www.humus.name/i
 Scelto il modello finale di una minipala gommata della Cat.
 Modificati gli shader e creato un primo file per la consegna.
 Download di una texture per la pelle del sedile e dei joystick dal sito gratuito http://naldzgraphics.net.
+
+## 18/05/17
+Aggiunta di semitrasparenza ai fanali posteriori.
+Inizio ricerca per qualche equazioni o materiale threejs per la creazione di specchi per lo specchietto retrovisore.
