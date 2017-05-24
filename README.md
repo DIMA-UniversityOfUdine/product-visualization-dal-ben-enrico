@@ -13,12 +13,12 @@ Per le equazioni degli shader mi sono basato su quelli fatti in classe.
 Ho creato diversi materiali che si basano su questi shader così da poter specificare materiali metallici e plastici, con colori diversi.
 Attualmente c'è solo una luce puntuale a illuminare l'oggetto e una enviromet map per dargli un aspetto puù realistico, specialmente per i metalli.
 Aggiunta una semitrasparenza per i fanali posteriori.
+Aggiunta dello specchietto retrovisore tramite una classe fornita da three.js.
 
 ## Aggiunte future
 Se la base del progetto soddisfa i requisiti minimi pensavo di aggiungere alcuni particolari : 
 - una paginazione come un sito di e-commerce
-- alcune spotlight e relative ombre
-- aggiunta di uno specchietto retrovisore con equazioni per mostrare parte del minipala gommata
+- ombre del modello
 - modifiche tramite il sito e-commerce del colore
 - modifica dei colori di base per renderlo più realistico
 - modifica di alcuni particolari tramite l'aggiunta di una texture che assomiglia alla pelle lavorata
