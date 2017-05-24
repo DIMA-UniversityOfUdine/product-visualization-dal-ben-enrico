@@ -22,6 +22,7 @@
 		<script src="lib/OrbitControls.js"></script>
 		<script src="lib/OBJLoader.js"></script>
 		<script src='lib/dat.gui.min.js'></script>
+		<script src="lib/Mirror.js"></script>
 	</head>
 	<body>
 		
@@ -43,7 +44,7 @@
 			varying vec3 vNormal;
 			varying vec3 vPosition;
 			varying vec2 uVv;
-			uniform vec3 pointLightPosition; // in world space
+			uniform vec3 pointLightPositions[2]; // in world space
 			uniform vec3 clight;
 			uniform float roughness;
 			uniform int metalness;
@@ -109,19 +110,16 @@
 					cspec = vec3( 0.04 );
 				}
 
-				vec4 lPosition = viewMatrix * vec4( pointLightPosition, 1.0 );
-				vec3 l = normalize(lPosition.xyz - vPosition.xyz);
+				
 				vec3 n = normalize( vNormal ); 											// interpolation destroys normalization, so we have to normalize
 				vec3 v = normalize( -vPosition);
 				vec3 vReflect = reflect(vPosition, n);
-				vec3 h = normalize( v + l);
+				
 				vec3 r = inverseTransformDirection( vReflect, viewMatrix );
 
 				// small quantity to prevent divisions by 0
-				float nDotl = max(dot( n, l ),0.000001);
-				float lDoth = max(dot( l, h ),0.000001);
-				float nDoth = max(dot( n, h ),0.000001);
-				float vDoth = max(dot( v, h ),0.000001);
+				
+				
 				float nDotv = max(dot( n, v ),0.000001);
 
 				float blinnShininessExponent = GGXRoughnessToBlinnExponent(roughness);
@@ -131,10 +129,26 @@
 				envLight = pow( envLight, vec3(2.2));
 
 				vec3 fresnel = FSchlick(nDotv, cspec);
+				vec3 outRadiance;
 
-				vec3 BRDF = (vec3(1.0) - fresnel) * cdiff/PI + ( fresnel * GSmith(nDotv, nDotl) * DGGX(nDoth, roughness*roughness) )/ (4.0 * nDotl * nDotv);
+				for(int i = 0; i < 2; i++){
+					vec3 v1 = pointLightPositions[i];
+					vec4 lPosition = viewMatrix * vec4( v1, 1.0 );
+					vec3 l = normalize(lPosition.xyz - vPosition.xyz);
+					vec3 h = normalize( v + l );
+					
+					float nDoth = max(dot( n, h ),0.000001);
+					float vDoth = max(dot( v, h ),0.000001);
+					float nDotl = max(dot( n, l ),0.000001);
+					float lDoth = max(dot( l, h ),0.000001);
 
-				vec3 outRadiance = envLight * BRDF_Specular_GGX_Environment(n, v, cspec, roughness) + PI * clight * nDotl * BRDF;
+					vec3 BRDF = (vec3(1.0) - fresnel) * cdiff/PI + ( fresnel * GSmith(nDotv, nDotl) * DGGX(nDoth, roughness*roughness) )/ (4.0 * nDotl * nDotv);
+
+					outRadiance += PI * clight * nDotl * BRDF;
+
+				}
+
+				outRadiance = envLight * BRDF_Specular_GGX_Environment(n, v, cspec, roughness) + outRadiance;
 
 				gl_FragColor = vec4(pow( abs(outRadiance), vec3(1.0/2.2)), 0.8);
 			}
@@ -173,16 +187,19 @@
 				materialColor : {type: "vec3", value: new THREE.Vector3()},
 				metalness: {type: "int", value: 1},
 				roughness: {type: "float", value: 0.1},
-				pointLightPosition:	{ type: "v3", value: new THREE.Vector3() },
+				pointLightPositions: { type: "v3v", value: [new THREE.Vector3(), new THREE.Vector3()] },
 				clight:	{ type: "v3", value: new THREE.Vector3() },
 				envMap:	{ type: "t", value: textureCube}
 			};
 		}
 		
-		var light = new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 16), new THREE.MeshBasicMaterial ({color: 0xffff00, wireframe:true}) );
-		light.position.set( 0.0, 50.0, 30.0 );
+		var light1 = new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 16), new THREE.MeshBasicMaterial ({color: 0xffff00, wireframe:true}) );
+		light1.position.set( 0.0, 30.0, 30.0 );
+		var light2 = new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 16), new THREE.MeshBasicMaterial ({color: 0xffff00, wireframe:true}) );
+		light2.position.set( 0.0, 30.0, -30.0 );
 		for(var  i=0; i<10; i++){
-			uniforms[i].pointLightPosition.value = new THREE.Vector3(light.position.x, light.position.y, light.position.z);
+			uniforms[i].pointLightPositions.value[0] = new THREE.Vector3(light1.position.x, light1.position.y, light1.position.z);
+			uniforms[i].pointLightPositions.value[1] = new THREE.Vector3(light2.position.x, light2.position.y, light2.position.z);
 		}
 		
 		function Start() {
@@ -217,7 +234,8 @@
 			controls.target.copy( scene.position );
 			controls.update();
 
-			scene.add( light );
+			scene.add( light1 );
+			scene.add( light2 );
 
 			var materialSteel = new THREE.ShaderMaterial( {
 					uniforms: uniforms[0],
@@ -261,9 +279,10 @@
 					fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
 					extensions: materialExtensions
 				});
+			mirrorMaterial = new THREE.Mirror( renderer, camera, { clipBias: 0.003, textureWidth: window.innerWidth, textureHeight: window.innerHeight, color: 0x777777 } );
 
 			materialSteel.uniforms.materialColor.value = new THREE.Vector3(0.560, 0.570, 0.580);						//iron
-			materialSteel.uniforms.roughness.value = 0.3;
+			materialSteel.uniforms.roughness.value = 0.4;
 		    materialSteel.uniforms.metalness.value = 1;
 
 		    materialStellB.uniforms.materialColor.value = new THREE.Vector3(0, 0, 0);										//black
@@ -306,15 +325,13 @@
 							mesh.rotateY ( Math.PI );
 	 						//mesh.matrixAutoUpdate = false;
 							scene.add( mesh );
-						}else if (child.name.includes('Object026') || child.name.includes('Screw_of_Wheel1') || child.name.includes('Screw_of_Wheel2') || child.name.includes('Screw_of_Wheel3') || child.name.includes('Screw_of_Wheel4') || child.name.includes('Wheel1') || child.name.includes('Wheel2') || child.name.includes('Wheel3') || child.name.includes('Wheel4')|| child.name.includes('Object033') || child.name.includes('Object067') || child.name.includes('Object066') || child.name.includes('Object057') || child.name.includes('Object070') || child.name.includes('Object061') || child.name.includes('Object063') || child.name.includes('Object064') || child.name.includes('Object065') || child.name.includes('Hydraulics003') || child.name.includes('Hydraulics1')  || child.name.includes('Object036') || child.name.includes('Lower_Frame2') || child.name.includes('Lower_Frame004') || child.name.includes('Object068') || child.name.includes('Object069') || child.name.includes('HP_wheel2') || child.name.includes('Object092') || child.name.includes('Object093') || child.name.includes('Object094') || child.name.includes('Object095')  || child.name.includes('Joystick')) {
+						}else if (child.name.includes('Object026') || child.name.includes('Screw_of_Wheel1') || child.name.includes('Screw_of_Wheel2') || child.name.includes('Screw_of_Wheel3') || child.name.includes('Screw_of_Wheel4') || child.name.includes('Wheel1') || child.name.includes('Wheel2') || child.name.includes('Wheel3') || child.name.includes('Wheel4')|| child.name.includes('Object033') || child.name.includes('Object067') || child.name.includes('Object066') || child.name.includes('Object057') || child.name.includes('Object070') || child.name.includes('Object061') || child.name.includes('Object063') || child.name.includes('Object064') || child.name.includes('Object065') || child.name.includes('Hydraulics003') || child.name.includes('Hydraulics1')  || child.name.includes('Object036') || child.name.includes('Lower_Frame2') || child.name.includes('Lower_Frame004') || child.name.includes('Object068') || child.name.includes('Object069') || child.name.includes('HP_wheel2') || child.name.includes('Object092') || child.name.includes('Object093') || child.name.includes('Object094') || child.name.includes('Object095')  || child.name.includes('Joystick') || child.name.includes('Screw_of_Mirror') || child.name.includes('HP_Details1') || child.name.includes('HP_Details2')) {
 							geometry = child.geometry;
 							mesh = new THREE.Mesh( geometry, materialSteel );
 							mesh.scale.multiplyScalar( 0.1 );
 							mesh.rotateY ( Math.PI );
 	 						//mesh.matrixAutoUpdate = false;
 							scene.add( mesh );
-
-							//|| child.name.includes('HP_Details1') || child.name.includes('HP_Details2') || child.name.includes('Screw_of_Mirror')
 						}else if(child.name.includes('Engine_Covers') || child.name.includes('Engine_Covers2') || child.name.includes('Lower_Frame1') || child.name.includes('Boom') || child.name.includes('Screw_of_Frame')){ 
 		            		geometry = child.geometry;
 							mesh = new THREE.Mesh( geometry, materialStellY );
@@ -329,18 +346,24 @@
 							mesh.rotateY ( Math.PI );
 	 						//mesh.matrixAutoUpdate = false;
 							scene.add( mesh );
-						}else if(child.name.includes('Object049') || child.name.includes('Object050') || child.name.includes('Object034') || child.name.includes('Object035') || child.name.includes('Object041') || child.name.includes('Object042') || child.name.includes('Object043') || child.name.includes('Object044') || child.name.includes('Object045') || child.name.includes('Object046') || child.name.includes('Object080') || child.name.includes('Object081') || child.name.includes('Operator_place') || child.name.includes('Operator_place3') || child.name.includes('Object082') || child.name.includes('Object083')){ 
+						}else if(child.name.includes('Object049') || child.name.includes('Object050') || child.name.includes('Object034') || child.name.includes('Object035') || child.name.includes('Object041') || child.name.includes('Object042') || child.name.includes('Object043') || child.name.includes('Object044') || child.name.includes('Object045') || child.name.includes('Object046') || child.name.includes('Object080') || child.name.includes('Object081') || child.name.includes('Operator_place') || child.name.includes('Operator_place3') || child.name.includes('Object082') || child.name.includes('Object083') || child.name.includes('Object039') || child.name.includes('Object040')){ 
 							geometry = child.geometry;
 							mesh = new THREE.Mesh( geometry, materialPlasticB );
 							mesh.scale.multiplyScalar( 0.1 );
 							mesh.rotateY ( Math.PI );
 	 						//mesh.matrixAutoUpdate = false;
 							scene.add( mesh );
-
-							//|| child.name.includes('Object039') Object040
 						}else if(child.name.includes('Object051') || child.name.includes('Object052')){ 
 		            		geometry = child.geometry;
 							mesh = new THREE.Mesh( geometry, materialPlasticR );
+							mesh.scale.multiplyScalar( 0.1 ); 
+							mesh.rotateY ( Math.PI );
+	 						//mesh.matrixAutoUpdate = false;
+							scene.add( mesh );
+						}else if(child.name.includes('Object054')){ 
+		            		geometry = child.geometry;
+							mesh = new THREE.Mesh( geometry, mirrorMaterial.material );
+							mesh.add(mirrorMaterial);
 							mesh.scale.multiplyScalar( 0.1 ); 
 							mesh.rotateY ( Math.PI );
 	 						//mesh.matrixAutoUpdate = false;
@@ -358,7 +381,7 @@
 
 				}
 			);
-
+			
 		}
 
 		function Update() {
@@ -370,6 +393,7 @@
 		
 		function Render() {
 			updateUniforms();
+			mirrorMaterial.render();
 			renderer.render(scene, camera);
 		}
 		
