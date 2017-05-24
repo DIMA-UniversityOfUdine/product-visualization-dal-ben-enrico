@@ -21,3 +21,8 @@ Download di una texture per la pelle del sedile e dei joystick dal sito gratuito
 ## 18/05/17
 Aggiunta di semitrasparenza ai fanali posteriori.
 Inizio ricerca per qualche equazioni o materiale threejs per la creazione di specchi per lo specchietto retrovisore.
+
+## 21/05/17 - 24/05/17
+Aggiunta dello specchietto tramie il materiale fornito dalla classe Mirror.js di three.js.
+Aggiunta di un seconda luce puntuale e inizio del lavoro sulle attenuazioni delle luci.
+Inizio del lavoro sula texture per la pelle dei sedili e dei joystick.
