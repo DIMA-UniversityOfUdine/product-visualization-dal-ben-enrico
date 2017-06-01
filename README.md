@@ -14,14 +14,14 @@ Ho creato diversi materiali che si basano su questi shader così da poter specif
 Attualmente c'è solo una luce puntuale a illuminare l'oggetto e una enviromet map per dargli un aspetto puù realistico, specialmente per i metalli.
 Aggiunta una semitrasparenza per i fanali posteriori.
 Aggiunta dello specchietto retrovisore tramite una classe fornita da three.js.
+Ho aggiunto dei rifinimenti su alcuni pezzi del modello per aggiungere una texture che assomiglia alla pelle lavorata in modo da dargli un aspetto più accattivante.
+Si può anche scegliere di colorare il odello in tre diverse tonalità.
 
 ## Aggiunte future
 Se la base del progetto soddisfa i requisiti minimi pensavo di aggiungere alcuni particolari : 
 - una paginazione come un sito di e-commerce
 - ombre del modello
-- modifiche tramite il sito e-commerce del colore
 - modifica dei colori di base per renderlo più realistico
-- modifica di alcuni particolari tramite l'aggiunta di una texture che assomiglia alla pelle lavorata
 
 #### Opzionale
 - aggiunta del logo della casa produttrice sulla minipala
