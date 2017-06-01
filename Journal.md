@@ -26,3 +26,8 @@ Inizio ricerca per qualche equazioni o materiale threejs per la creazione di spe
 Aggiunta dello specchietto tramie il materiale fornito dalla classe Mirror.js di three.js.
 Aggiunta di un seconda luce puntuale e inizio del lavoro sulle attenuazioni delle luci.
 Inizio del lavoro sula texture per la pelle dei sedili e dei joystick.
+
+## 25/05/17 - 01/06/17
+Aggiunta della pelle a sedili e manopole.
+Ricerca di una layout in stile sito e-commerce.
+Aggiiunta di un vetro sul retro della minipala.
