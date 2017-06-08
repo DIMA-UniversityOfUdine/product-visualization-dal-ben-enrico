@@ -1,555 +1,337 @@
-<html>
-	<head>
-		<title>Progettino 2 : Bobcat</title>
-		<style>
-		
-		body {
-			font-family: Monospace;
-			background-color: #f0f0f0;
-			margin: 0px;
-			overflow: hidden;
-		}
-		
-		canvas { 
-			width: 100%; 
-			height: 100%;
-		}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Amaranto | Progetto Dal Ben Enrico</title>
+    
+	<!-- Add to homescreen for Chrome on Android -->
+	<meta name="mobile-web-app-capable" content="yes">
+	<link rel="icon" sizes="192x192" href="images/touch/chrome-touch-icon-192x192.png">
 	
-		</style>
-		<script src="lib/three.min.js"></script>
-		<script src="lib/stats.min.js"></script>
-		<script src="lib/Coordinates.js"></script>
-		<script src="lib/OrbitControls.js"></script>
-		<script src="lib/OBJLoader.js"></script>
-		<script src='lib/dat.gui.min.js'></script>
-		<script src="lib/Mirror.js"></script>
-	</head>
-	<body>
+	<!-- Remove Tap Highlight on Windows Phone IE -->
+	<meta name="msapplication-tap-highlight" content="no"/> 
+    
+    <!-- Add to homescreen for Safari on iOS -->
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black">
+	<meta name="apple-mobile-web-app-title" content="Title">
+	<link rel="apple-touch-icon-precomposed" href="images/touch/apple-touch-icon-precomposed.png">
+	
+	<!-- Tile icon for Win8 (144x144 + tile color) -->
+	<meta name="msapplication-TileImage" content="images/touch/ms-touch-icon-144x144-precomposed.png">
+	<meta name="msapplication-TileColor" content="#3372DF">
+	
+	<script src="js/vendor/modernizr-2.6.2.min.js"></script>
+    
+    <link rel="stylesheet" href="css/animate.min.css">
+    <link rel="stylesheet" href="css/magic.min.css">
+    <link rel="stylesheet" href="css/pure.css">
+    <link rel="stylesheet" href="http://code.ionicframework.com/ionicons/1.5.2/css/ionicons.min.css">
+    <link rel="stylesheet" href="css/woocommerce.css"><!-- WooCommerce -->
+    <link rel="stylesheet" href="style.css">
+    
+</head>
+<body class="single single-product postid-70 woocommerce woocommerce-page custom-font-enabled single-author">
+<!--[if lt IE 7]><p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p><![endif]-->
+<div class="bg_loader"><div class="loader"></div></div>
+	
+	<div id="page" class="hfeed site">
+	
+		<div class="mm-window magictime">
+			<form role="search" method="get" class="search-form" action="">
+				<label for="search"><i class="ion-search"></i>Search to find your product</label>
+				<div class="pure-g">
+					<div class="pure-u-1 pure-u-sm-1">
+						<input type="search" class="search-field" placeholder="Search..." value="" name="s">
+						<input type="submit" class="search-submit" value="submit">
+					</div>
+				</div>
+			</form>
+			<span class="btn-close ion-close"></span>
+		</div>
+			
+		<header id="header">
+			<span class="btn-menu ion-navicon"></span>
+			<span class="btn-menu-close ion-close"></span>
+			
+			<a class="logo" href="index.html">
+				<picture>
+					<!--[if IE 9]><video style="display: none;"><![endif]-->
+					<source srcset="images/test/logo_small.png" media="(max-width: 1024px)">
+					<!--[if IE 9]></video><![endif]-->
+					<img srcset="images/test/logo.png" alt="">
+				</picture>
+			</a>
+			
+			<div id="socialbox">
+				<a class="social_item ion-social-facebook mm-facebook mm-ripple" href="#" title=""></a>
+				<a class="social_item ion-social-twitter mm-twitter mm-ripple" href="#" title=""></a>
+				<a class="social_item ion-social-googleplus mm-googleplus mm-ripple" href="#" title=""></a>
+				<a class="social_item ion-social-instagram mm-instagram mm-ripple" href="#" title=""></a>
+			</div>
+			
+			<div class="menu-container magictime">
+			
+				<span class="btn-search ion-search"></span>
+				
+				<nav id="site-navigation" class="main-navigation" role="navigation">
+					<div class="menu">
+						<ul>
+							<li class="current_page_item"><a class="ion-person-stalker" href="#" title="">About Us</a></li>
+							<li class="page_item"><a class="ion-cash" href="#" title="">Payments</a></li>
+							<li class="page_item"><a class="ion-plane" href="#" title="">Shipments</a></li>
+							<li class="page_item"><a class="ion-refresh" href="#" title="">Refund</a></li>
+							<li class="page_item"><a class="ion-paper-airplane" href="#" title="">Contact Us</a></li>
+							<li class="page_item"><a class="ion-bag" href="#" title="">Shop</a></li>
+						</ul>
+					</div>
+				</nav>
+				
+			</div><!-- .menu-container -->
+			
+		</header>
 		
-		<script id="vertexShader" type="x-shader/x-vertex">
-			varying vec3 vNormal;
-			varying vec3 vPosition;
-			varying vec2 uVv;
-
-			void main() {
-				vec4 vPos = modelViewMatrix * vec4( position, 1.0 );
-				vPosition = vPos.xyz;
-				vNormal = normalMatrix * normal;
-				uVv = uv;
-				gl_Position = projectionMatrix * vPos;
-			}
-		</script>
-
-		<script id="fragmentShader" type="x-shader/x-fragment">
-			varying vec3 vNormal;
-			varying vec3 vPosition;
-			varying vec2 uVv;
-			uniform vec3 pointLightPositions[2];		 // in world space
-			uniform vec3 clight;
-			uniform float roughness;
-			uniform int metalness;
-			uniform vec3 materialColor;
-			uniform samplerCube envMap;
-			const float PI = 3.14159;
-
-			#define saturate(a) clamp( a, 0.0, 1.0 )
-
-			vec3 FSchlick(float lDoth, vec3 spec) {
-				return (spec + (vec3(1.0) - spec) * pow(1.0 - lDoth, 5.0));
-			}
-
-			float DGGX(float nDoth, float alpha) {
-				float alpha2 = alpha*alpha;
-				float d = nDoth*nDoth*(alpha2-1.0)+1.0;
-				return (  alpha2 / (PI*d*d));
-			}
-
-			float G1(float dotProduct, float k) {
-				return (dotProduct / (dotProduct*(1.0-k) + k) );
-			}
-
-			float GSmith(float nDotv, float nDotl) {
-				float k = roughness*roughness;
-				return G1(nDotl,k)*G1(nDotv,k);
-			}
-
-			vec3 inverseTransformDirection( in vec3 dir, in mat4 matrix ) {
-				return normalize( ( vec4( dir, 0.0 ) * matrix ).xyz );
-			}
-
-			float getSpecularMIPLevel( const in float blinnShininessExponent, const in int maxMIPLevel ) {
-		 		float maxMIPLevelScalar = float( maxMIPLevel );
-		 		float desiredMIPLevel = maxMIPLevelScalar - 0.79248 - 0.5 * log2( pow( blinnShininessExponent, 2.0 ) + 1.0 );
-		 		return clamp( desiredMIPLevel, 0.0, maxMIPLevelScalar );
-		 	}
-
-			float GGXRoughnessToBlinnExponent( const in float ggxRoughness ) {
-		  		return ( 2.0 / pow( ggxRoughness + 0.0001 , 2.0 ) - 2.0 );
-		  	}
-
-		  	vec3 BRDF_Specular_GGX_Environment( vec3 normal, vec3 viewDir, const in vec3 cspec, const in float roughness ) {
-
-				float dotNV = saturate( dot( normal, viewDir ) );
-				const vec4 c0 = vec4( - 1, - 0.0275, - 0.572, 0.022 );
-				const vec4 c1 = vec4( 1, 0.0425, 1.04, - 0.04 );
-				vec4 r = roughness * c0 + c1;
-				float a004 = min( r.x * r.x, exp2( - 9.28 * dotNV ) ) * r.x + r.y;
-				vec2 AB = vec2( -1.04, 1.04 ) * a004 + r.zw;
-				return cspec * AB.x + AB.y;
-
-			}
-
-			void main() {
-				vec3 cspec;
-				vec3 cdiff;
-				if(metalness == 1){
-					cspec = materialColor;
-					cdiff = vec3( 0.01 );
-				}else{
-					cdiff = materialColor;
-					cspec = vec3( 0.04 );
-				}
-
+		<div id="primary" class="content-area">
+			<main id="main" class="site-main" role="main">
+							
+				<span class="clear"></span>
 				
-				vec3 n = normalize( vNormal ); 											// interpolation destroys normalization, so we have to normalize
-				vec3 v = normalize( -vPosition);
-				vec3 vReflect = reflect(vPosition, n);
+				<div id="content" role="main">
 				
-				vec3 r = inverseTransformDirection( vReflect, viewMatrix );
+					<nav class="woocommerce-breadcrumb" itemprop="breadcrumb"><a class="home" href="#">Home</a> / <a href="#">Machinery</a> / Minipala</nav>
 
-				// small quantity to prevent divisions by 0
+					<div itemscope="" itemtype="http://schema.org/Product" id="product-70" class="post-70 product type-product status-publish has-post-thumbnail sale shipping-taxable purchasable product-type-simple product-cat-forniture instock mm-container mm-padded">
 				
+						<span class="onsale">Sale!</span>
+						
+						<div class="images">
 				
-				float nDotv = max(dot( n, v ),0.000001);
+							<a href="images/test/minipala.png" itemprop="image" class="woocommerce-main-image zoom" title="poster_2_up" data-rel="prettyPhoto[product-gallery]"><img width="800" height="742" src="images/test/minipala.png" class="attachment-shop_single wp-post-image" alt="" title=""></a>
+							
+							<!--<div class="thumbnails">
+								<a href="#" class="zoom first" title="" data-rel="prettyPhoto[product-gallery]"><img width="150" height="100" src="images/test/design_150x100_1.jpg" class="attachment-shop_thumbnail" alt=""></a>
+								<a href="#" class="zoom first" title="" data-rel="prettyPhoto[product-gallery]"><img width="150" height="100" src="images/test/design_150x100_2.jpg" class="attachment-shop_thumbnail" alt=""></a>
+								<a href="#" class="zoom first" title="" data-rel="prettyPhoto[product-gallery]"><img width="150" height="100" src="images/test/design_150x100_3.jpg" class="attachment-shop_thumbnail" alt=""></a>
+								
+							</div>
 
-				float blinnShininessExponent = GGXRoughnessToBlinnExponent(roughness);
-				float specularMIPLevel = getSpecularMIPLevel(blinnShininessExponent ,8 );
-
-				vec3 envLight = textureCubeLodEXT( envMap, vec3(-r.x, r.yz), specularMIPLevel ).rgb;
-				envLight = pow( envLight, vec3(2.2));
-
-				vec3 fresnel = FSchlick(nDotv, cspec);
-				vec3 outRadiance;
-
-				for(int i = 0; i < 1; i++){
-					vec3 v1 = pointLightPositions[i];
-					vec4 lPosition = viewMatrix * vec4( v1, 1.0 );
-					vec3 l = normalize(lPosition.xyz - vPosition.xyz);
-					vec3 h = normalize( v + l );
+							-->
 					
-					float nDoth = max(dot( n, h ),0.000001);
-					float vDoth = max(dot( v, h ),0.000001);
-					float nDotl = max(dot( n, l ),0.000001);
-					float lDoth = max(dot( l, h ),0.000001);
-
-					vec3 BRDF = (vec3(1.0) - fresnel) * cdiff/PI + ( fresnel * GSmith(nDotv, nDotl) * DGGX(nDoth, roughness*roughness) )/ (4.0 * nDotl * nDotv);
-
-					outRadiance += PI * clight * nDotl * BRDF;
-
-				}
-
-				outRadiance = envLight * BRDF_Specular_GGX_Environment(n, v, cspec, roughness) + outRadiance;
-
-				gl_FragColor = vec4(pow( abs(outRadiance), vec3(1.0/2.2)), 0.8);
-			}
-
-		</script>
-
-		<script type="x-shader/x-fragment" id="fragmentTexShader">
-			varying vec3 vNormal;
-			varying vec3 vPosition;
-			varying vec2 uVv;
-			uniform vec3 pointLightPosition; // in world space
-			uniform vec3 clight;
-			uniform sampler2D specularMap;
-			uniform sampler2D diffuseMap;
-			uniform sampler2D roughnessMap;
-			uniform vec2 textureRepeat;
-			const float PI = 3.14159;
-
-			vec3 cdiff;
-			vec3 cspec;
-			float roughness;
-
-			vec3 FSchlick(float lDoth) {
-				return (cspec + (vec3(1.0) - cspec) * pow(1.0 - lDoth, 5.0));
-			}
-
-			float DGGX(float nDoth, float alpha) {
-				float alpha2 = alpha * alpha;
-				float d = nDoth * nDoth * (alpha2 - 1.0) + 1.0;
-				return (  alpha2 / (PI * d * d));
-			}
-
-			float G1(float dotProduct, float k) {
-				return (dotProduct / (dotProduct * (1.0-k) + k) );
-			}
-
-			float GSmith(float nDotv, float nDotl) {
-					float k = roughness*roughness;
-					return G1(nDotl,k)*G1(nDotv,k);
-			}
-
-			void main() {
-				vec4 lPosition = viewMatrix * vec4( pointLightPosition, 1.0 );
-				vec3 l = normalize(lPosition.xyz - vPosition.xyz);
-				vec3 n = normalize( vNormal );  // interpolation destroys normalization, so we have to normalize
-				vec3 v = normalize( -vPosition);
-				vec3 h = normalize( v + l);
-				// small quantity to prevent divisions by 0
-				float nDotl = max(dot( n, l ),0.000001);
-				float lDoth = max(dot( l, h ),0.000001);
-				float nDoth = max(dot( n, h ),0.000001);
-				float vDoth = max(dot( v, h ),0.000001);
-				float nDotv = max(dot( n, v ),0.000001);
-
-				cdiff = texture2D( diffuseMap, uVv*textureRepeat ).rgb;
-				// texture in sRGB, linearize
-				cdiff = pow( cdiff, vec3(2.2));
-				cspec = texture2D( specularMap, uVv*textureRepeat ).rgb;
-				// texture in sRGB, linearize
-				cspec = pow( cspec, vec3(2.2));
-				roughness = texture2D( roughnessMap, uVv*textureRepeat).r; // no need to linearize roughness map
-
-				vec3 fresnel = FSchlick(lDoth);
-				vec3 BRDF = (vec3(1.0) - fresnel) * cdiff/PI + fresnel * GSmith(nDotv, nDotl) * DGGX(nDoth, roughness*roughness) / (4.0 * nDotl * nDotv);
-				vec3 outRadiance = PI * (clight ) * nDotl * BRDF;
-				// gamma encode the final value
-				gl_FragColor = vec4( pow( outRadiance, vec3(1.0/2.2) ), 1.0 );
-			}
-		</script>
-
-		<script>
-		
-		var controls, stats, gui
-			scene = new THREE.Scene();
-			camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-			renderer = new THREE.WebGLRenderer( {antialias: true} );;
-
-		var lightParameters = {
-			red: 1.0,
-			green: 1.0,
-			blue: 1.0,
-			intensity: 6.0
-		}
-		var params = {
-			color : 'Yellow'
-		}
-
-		var loader = new THREE.CubeTextureLoader();
-		loader.setPath( 'cubemap/Yokohama2/' );
-		var textureCube = loader.load( [
-			'posx.jpg', 'negx.jpg',
-			'posy.jpg', 'negy.jpg',
-			'posz.jpg', 'negz.jpg'
-		] );
-
-		var diffuseMap = loadTexture( "texture/black_leather_DIFF.jpg" );
-		var specularMap = loadTexture( "texture/black_leather_SPEC.jpg" );
-		var roughnessMap = loadTexture( "texture/black_leather_ROUGH.jpg" );
-		
-
-		textureCube.minFilter = THREE.LinearMipMapLinearFilter;
-
-		materialExtensions = {
-				derivatives: true, // set to use derivatives
-				shaderTextureLOD: true // set to use shader texture LOD
-			};
-
-		var uniforms= new Array(10);
-		for(var  i=0; i<10; i++){
-			uniforms[i] = {
-				materialColor : {type: "vec3", value: new THREE.Vector3()},
-				metalness: {type: "int", value: 1},
-				roughness: {type: "float", value: 0.1},
-				pointLightPositions: { type: "v3v", value: [new THREE.Vector3(), new THREE.Vector3()] },
-				clight:	{ type: "v3", value: new THREE.Vector3() },
-				envMap:	{ type: "t", value: textureCube}
-			};
-		}
-
-		var uniformTex = {
-			specularMap: { type: "t", value: specularMap},
-			diffuseMap:	{ type: "t", value: diffuseMap},
-			roughnessMap:	{ type: "t", value: roughnessMap},
-			pointLightPosition:	{ type: "v3", value: new THREE.Vector3() },
-			clight:	{ type: "v3", value: new THREE.Vector3() },
-			textureRepeat: { type: "v2", value: new THREE.Vector2(100,100) }
-		}
-		
-		var light1 = new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 16), new THREE.MeshBasicMaterial ({color: 0xffff00, wireframe:true}) );
-		light1.position.set( 30.0, 30.0, 0.0 );
-		var light2 = new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 16), new THREE.MeshBasicMaterial ({color: 0xffff00, wireframe:true}) );
-		light2.position.set( 0.0, 30.0, -30.0 );
-		uniformTex.pointLightPosition.value = new THREE.Vector3(light1.position.x, light1.position.y, light1.position.z);
-		for(var  i=0; i<10; i++){
-			uniforms[i].pointLightPositions.value[0] = new THREE.Vector3(light1.position.x, light1.position.y, light1.position.z);
-			uniforms[i].pointLightPositions.value[1] = new THREE.Vector3(light2.position.x, light2.position.y, light2.position.z);
-		}
-
-		var materialSteel = new THREE.ShaderMaterial( {
-				uniforms: uniforms[0],
-				vertexShader: document.getElementById( 'vertexShader' ).textContent,
-				fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
-				extensions: materialExtensions
-			}),
-			materialStellB = new THREE.ShaderMaterial( {
-				uniforms: uniforms[1],
-				vertexShader: document.getElementById( 'vertexShader' ).textContent,
-				fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
-				extensions: materialExtensions
-			}),
-			materialStellY = new THREE.ShaderMaterial( {
-				uniforms: uniforms[2],
-				vertexShader: document.getElementById( 'vertexShader' ).textContent,
-				fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
-				extensions: materialExtensions
-			}),
-			materialRubber = new THREE.ShaderMaterial( {
-				uniforms: uniforms[3],
-				vertexShader: document.getElementById( 'vertexShader' ).textContent,
-				fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
-				extensions: materialExtensions
-			}),
-			materialPlasticB = new THREE.ShaderMaterial( {
-				uniforms: uniforms[4],
-				vertexShader: document.getElementById( 'vertexShader' ).textContent,
-				fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
-				extensions: materialExtensions
-			}),
-			materialPlasticR = new THREE.ShaderMaterial( {
-				uniforms: uniforms[5],
-				vertexShader: document.getElementById( 'vertexShader' ).textContent,
-				fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
-				extensions: materialExtensions
-			}),
-			materialLether = new THREE.ShaderMaterial( {
-				uniforms: uniformTex,
-				vertexShader: document.getElementById( 'vertexShader' ).textContent,
-				fragmentShader: document.getElementById( 'fragmentTexShader' ).textContent
-			});
-		
-		function Start() {
-			renderer.setPixelRatio( window.devicePixelRatio );
-			renderer.setSize( window.innerWidth, window.innerHeight );
-			renderer.setClearColor( 0xf0f0f0 );
-			document.body.appendChild( renderer.domElement );
-			
-			camera.position.set(0,20,30);
-			camera.lookAt( new THREE.Vector3(0,0,0));
-			scene.add( camera );
-
-			scene.background = textureCube;
-
-			stats = new Stats();
-			stats.domElement.style.position = 'absolute';
-			stats.domElement.style.top = '0px';
-			document.body.appendChild( stats.domElement );
-
-			// uncomment if you need to draw coordinate axes when building the scene
-			Coordinates.drawAllAxes();
-			
-			controls = new THREE.OrbitControls( camera, renderer.domElement );
-			controls.addEventListener( 'change', Render );
-			controls.minDistance = 0;
-			controls.maxDistance = 50;
-			//controls.maxPolarAngle = Math.PI / 2;
-			//controls.enablePan = false;				//movement with rigth click
-			controls.target.copy( scene.position );
-			controls.update();
-
-			scene.add( light1 );
-			scene.add( light2 );
-
-			
-			mirrorMaterial = new THREE.Mirror( renderer, camera, { clipBias: 0.003, textureWidth: window.innerWidth, textureHeight: window.innerHeight, color: 0x777777 } );
-
-			materialSteel.uniforms.materialColor.value = new THREE.Vector3(0.560, 0.570, 0.580);						//iron
-			materialSteel.uniforms.roughness.value = 0.4;
-		    materialSteel.uniforms.metalness.value = 1;
-
-		    materialStellB.uniforms.materialColor.value = new THREE.Vector3(0, 0, 0);										//black
-			materialStellB.uniforms.roughness.value = 0.6;
-		    materialStellB.uniforms.metalness.value = 1;
-
-		    materialStellY.uniforms.materialColor.value = new THREE.Vector3(1, 1, 0);									//yellow
-			materialStellY.uniforms.roughness.value = 0.7;
-		    materialStellY.uniforms.metalness.value = 1;
-
-		    materialRubber.uniforms.materialColor.value = new THREE.Vector3(0, 0, 0);									//black
-			materialRubber.uniforms.roughness.value = 0.95;
-		    materialRubber.uniforms.metalness.value = 0;
-
-		    materialPlasticB.uniforms.materialColor.value = new THREE.Vector3(0, 0, 0);									//black
-			materialPlasticB.uniforms.roughness.value = 0.6;
-		    materialPlasticB.uniforms.metalness.value = 0;
-
-		    materialPlasticR.uniforms.materialColor.value = new THREE.Vector3(1, 0, 0);									//red
-			materialPlasticR.uniforms.roughness.value = 0.6;
-		    materialPlasticR.uniforms.metalness.value = 0;
-		    materialPlasticR.transparent = true;
-
-
-			var loader = new THREE.OBJLoader();
-		    loader.load( './Modelli/Escavatore/Cams650.obj',
-				function ( group ) {
-					var length = group.children.length;
-					for(var i = 0; i < length; i++){
-						var child = group.children[ i ];
-						if ( child.name.includes('Cabine_Out') || child.name.includes('Cabin_Out2')  || child.name.includes('Screw_of_Cabin007') || child.name.includes('Object058') || child.name.includes('Object059') || child.name.includes('Cabin_In') || child.name.includes('Object031') || child.name.includes('Object056') || child.name.includes('Object060') || child.name.includes('Object062') || child.name.includes('Object096') || child.name.includes('Object078') || child.name.includes('Object079') || child.name.includes('Object084') || child.name.includes('Object085') || child.name.includes('Object075') || child.name.includes('Object076') || child.name.includes('Plane005') || child.name.includes('Plane006')) {
-							geometry = child.geometry;
-							mesh = new THREE.Mesh( geometry, materialStellB );
-							mesh.scale.multiplyScalar( 0.1 );
-							mesh.rotateY ( Math.PI );
-	 						//mesh.matrixAutoUpdate = false;
-							scene.add( mesh );
-						}else if (child.name.includes('Object026') || child.name.includes('Screw_of_Wheel1') || child.name.includes('Screw_of_Wheel2') || child.name.includes('Screw_of_Wheel3') || child.name.includes('Screw_of_Wheel4') || child.name.includes('Wheel1') || child.name.includes('Wheel2') || child.name.includes('Wheel3') || child.name.includes('Wheel4')|| child.name.includes('Object033') || child.name.includes('Object067') || child.name.includes('Object066') || child.name.includes('Object057') || child.name.includes('Object070') || child.name.includes('Object061') || child.name.includes('Object063') || child.name.includes('Object064') || child.name.includes('Object065') || child.name.includes('Hydraulics003') || child.name.includes('Hydraulics1')  || child.name.includes('Object036') || child.name.includes('Lower_Frame2') || child.name.includes('Lower_Frame004') || child.name.includes('Object068') || child.name.includes('Object069') || child.name.includes('HP_wheel2') || child.name.includes('Object092') || child.name.includes('Object093') || child.name.includes('Object094') || child.name.includes('Object095')  || child.name.includes('Joystick') || child.name.includes('Screw_of_Mirror') || child.name.includes('HP_Details1') || child.name.includes('HP_Details2')) {
-							geometry = child.geometry;
-							mesh = new THREE.Mesh( geometry, materialSteel );
-							mesh.scale.multiplyScalar( 0.1 );
-							mesh.rotateY ( Math.PI );
-	 						//mesh.matrixAutoUpdate = false;
-							scene.add( mesh );
-						}else if(child.name.includes('Engine_Covers') || child.name.includes('Engine_Covers2') || child.name.includes('Lower_Frame1') || child.name.includes('Boom') || child.name.includes('Screw_of_Frame')){ 
-		            		geometry = child.geometry;
-							mesh = new THREE.Mesh( geometry, materialStellY );
-							mesh.scale.multiplyScalar( 0.1 ); 
-							mesh.rotateY ( Math.PI );
-	 						//mesh.matrixAutoUpdate = false;
-							scene.add( mesh );
-						}else if(child.name.includes('Object091') || child.name.includes('Object090') || child.name.includes('Object089') || child.name.includes('Object088') || child.name.includes('Hydraulics_spline1') || child.name.includes('Hydraulics_spline2') || child.name.includes('Object077') || child.name.includes('Object073') || child.name.includes('Object074') || child.name.includes('Object055')){
-							geometry = child.geometry;
-							mesh = new THREE.Mesh( geometry, materialRubber );
-							mesh.scale.multiplyScalar( 0.1 );
-							mesh.rotateY ( Math.PI );
-	 						//mesh.matrixAutoUpdate = false;
-							scene.add( mesh );
-						}else if(child.name.includes('Object049') || child.name.includes('Object050') || child.name.includes('Object034') || child.name.includes('Object035') || child.name.includes('Object041') || child.name.includes('Object042') || child.name.includes('Object043') || child.name.includes('Object044') || child.name.includes('Object045') || child.name.includes('Object046') || child.name.includes('Object080') || child.name.includes('Object081') || child.name.includes('Operator_place') || child.name.includes('Operator_place3') || child.name.includes('Object082') || child.name.includes('Object083') || child.name.includes('Object039') || child.name.includes('Object040')){ 
-							geometry = child.geometry;
-							mesh = new THREE.Mesh( geometry, materialPlasticB );
-							mesh.scale.multiplyScalar( 0.1 );
-							mesh.rotateY ( Math.PI );
-	 						//mesh.matrixAutoUpdate = false;
-							scene.add( mesh );
-						}else if(child.name.includes('Object051') || child.name.includes('Object052')){ 
-		            		geometry = child.geometry;
-							mesh = new THREE.Mesh( geometry, materialPlasticR );
-							mesh.scale.multiplyScalar( 0.1 ); 
-							mesh.rotateY ( Math.PI );
-	 						//mesh.matrixAutoUpdate = false;
-							scene.add( mesh );
-						}else if(child.name.includes('Object054')){ 
-		            		geometry = child.geometry;
-							mesh = new THREE.Mesh( geometry, mirrorMaterial.material );
-							mesh.add(mirrorMaterial);
-							mesh.scale.multiplyScalar( 0.1 ); 
-							mesh.rotateY ( Math.PI );
-	 						//mesh.matrixAutoUpdate = false;
-							scene.add( mesh );
-						}else if(child.name.includes('Object071') || child.name.includes('Object072') || child.name.includes('Object086') || child.name.includes('Object087')){ 
-		            		geometry = child.geometry;
-							mesh = new THREE.Mesh( geometry, materialLether );
-							mesh.scale.multiplyScalar( 0.1 ); 
-							mesh.rotateY ( Math.PI );
-	 						//mesh.matrixAutoUpdate = false;
-							scene.add( mesh );
-						}/*else{
-							geometry = child.geometry;
-							mesh = new THREE.Mesh( geometry, material );
-							mesh.scale.multiplyScalar( 0.1 );
-							mesh.rotateY ( Math.PI );
-	 						//mesh.matrixAutoUpdate = false;
-							scene.add( mesh );
-
-						}*/
-					}
-
-				}
-			);
-			
-		}
-
-		function loadTexture(file) {
-			var texture = new THREE.TextureLoader().load( file , function ( texture ) {
-
-				texture.minFilter = THREE.LinearMipMapLinearFilter;
-				texture.anisotropy = renderer.getMaxAnisotropy();
-				texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-		  		texture.offset.set( 0, 0 );
-				texture.needsUpdate = true;
-				Render();
-			} );
-			return texture;
-		}
-
-		function Update() {
-			requestAnimationFrame( Update );
-			//controls.update();  
-			stats.update();
-			Render();
-		}
-		
-		function Render() {
-			updateUniforms();
-			mirrorMaterial.render();
-			renderer.render(scene, camera);
-		}
-		
-		function clearGui() {
-
-				if ( gui ) gui.destroy();
-				gui = new dat.GUI();
-				gui.open();
-
-			}
-
-			function buildGui() {
-				clearGui();
+						</div>
 				
-				gui.add(params, 'color' , ['Yellow', 'Orange', 'White'] ).onChange( function(newVal) { Render() });
+						<div class="summary entry-summary">
+							<a href="minipala.html" target="_blank"><h4><p align="center">Link for 3D model of object</p></h4></a>
 				
-				lightSettings = gui.addFolder('Light Parameters');
-				lightSettings.add(lightParameters,'red').min(0).max(1).onChange( function(newVal) { Render() });
-				lightSettings.add(lightParameters,'green').min(0).max(1).onChange( function(newVal) { Render() });
-				lightSettings.add(lightParameters,'blue').min(0).max(1).onChange( function(newVal) { Render() });
-				lightSettings.add(lightParameters,'intensity').min(0).max(10).onChange( function(newVal) { Render()});
-
+							<h1 itemprop="name" class="product_title entry-title">Minipala</h1>
+							<div class="woocommerce-product-rating" itemprop="aggregateRating" itemscope="" itemtype="http://schema.org/AggregateRating">
+								<div class="star-rating" title="Valued 4.00 of 5">
+									<span style="width:80%"><strong itemprop="ratingValue" class="rating">4.50</strong> of 5 </span>
+								</div>
+							</div>
 				
-
-
-			}
-
-			function updateUniforms() {
-				if(params.color == 'Yellow'){
-					materialStellY.uniforms.materialColor.value = new THREE.Vector3(1, 1, 0);
-					materialStellY.uniforms.metalness.value = 1;
-				}else if(params.color == 'Orange'){
-					materialStellY.uniforms.materialColor.value = new THREE.Vector3(1, 0.6, 0.1);
-					materialStellY.uniforms.metalness.value = 0;
-				}else{
-					materialStellY.uniforms.materialColor.value = new THREE.Vector3(1, 0.9, 0.9);
-					materialStellY.uniforms.metalness.value = 0;
-				}
+							<div itemprop="offers" itemscope="" itemtype="http://schema.org/Offer">
+								<p class="price"><del><span class="amount">11500,00 €</span></del> <ins><span class="amount">9600,00 €</span></ins></p>
+					
+								<meta itemprop="price" content="12">
+								<meta itemprop="priceCurrency" content="EUR">
+								<link itemprop="availability" href="http://schema.org/InStock">
+							</div>
+						
+							<div itemprop="description">
+								<p>Minipala adatta allo spostamento di terra o altro materiale ingombrante (moglie compresa). A borbo di una minipala le donne si butteranno ai tuoi piedi e farai invidia a tutto il vicinato. Ha solo alcuni piccoli difetti:</p>
+								<ol>
+									<li> Beve quanto un vecchio friulano in osteria</li>
+									<li> Fa piu rumore di tua suocera quando si incazza, solo che un motore a scoppio ha un suono più dolce</li>
+									<li> Emette odori sgradevoli, a meno che a te non piaccia l'odore di benzina</li>
+								</ol>
+							</div>
+						
+							<form class="cart" method="post" enctype="multipart/form-data">
+								<div class="quantity buttons_added">
+									<select onChange=”Menu(this)”>
+									   <option value=”pagina1.htm”>Giallo</option>
+									   <option value=”pagina2.htm”>Rosso</option>
+									   <option value=”pagina3.htm”>Bianco</option>
+									</select>
+								</div>
+								<div class="quantity buttons_added">
+									<input type="button" value="-" class="minus"><input type="number" step="1" min="1" name="quantity" value="1" title="Qta" class="input-text qty text" size="4"><input type="button" value="+" class="plus">
+								</div>
+						 		<input type="hidden" name="add-to-cart" value="70">
+					
+						 		<button type="submit" class="single_add_to_cart_button button alt">Buy Now</button>
+						 	</form>
+						 	
+						 	<span class="line_break_two"><i class="ion-more"></i></span>
+						 	
+						 	<div class="product_meta">
+						 		<span class="posted_in">Category: <a href="#" rel="tag">Machinery</a>.</span>
+						 	</div>
+						 
+						 </div><!-- .summary -->
+						 
+						 <div class="woocommerce-tabs">
+						 	<ul class="tabs">
+						 	
+						 		<li class="description_tab active">
+									<a href="#tab-description">Description</a>
+								</li>
 				
-				for(var  i=0; i<10; i++){
-					uniforms[i].clight.value = new THREE.Vector3(
-						lightParameters.red * lightParameters.intensity,
-					    lightParameters.green * lightParameters.intensity,
-						lightParameters.blue * lightParameters.intensity
-					);
-				}
-
-				uniformTex.clight.value = new THREE.Vector3(
-						lightParameters.red * lightParameters.intensity,
-					    lightParameters.green * lightParameters.intensity,
-						lightParameters.blue * lightParameters.intensity
-					);
-			}
-
-			Start();
-			buildGui();
-			Update();
+							</ul>
+						
+							<div class="panel entry-content" id="tab-description" style="display: block;">
+								<h2>Descrizione prodotto</h2>
+								<p>Minipala adatta allo spostamento di terra o altro materiale ingombrante (moglie compresa). A borbo di una minipala le donne si butteranno ai tuoi piedi e farai invidia a tutto il vicinato.</p>
+							</div>
+							
+							<!--<div class="panel entry-content" id="tab-reviews" style="display: none;">
+								<div id="reviews">
+									<div id="comments">
+										<h2>4 review for Minipala</h2>
+										<ol class="commentlist">
+											
+											<li itemprop="reviews" itemscope="" itemtype="http://schema.org/Review" class="comment even thread-even depth-1" id="li-comment-58">
+												<div id="comment-58" class="comment_container">
+													<img alt="Cobus Bester" src="http://1.gravatar.com/avatar/f0cde930b42c79145194679d5b6e3b1d?s=60&amp;d=http%3A%2F%2F1.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D60&amp;r=G" class="avatar avatar-60 photo" height="60" width="60">
+													<div class="comment-text">
+														<div itemprop="reviewRating" itemscope="" itemtype="http://schema.org/Rating" class="star-rating" title="Valutato 4 su 5">
+															<span style="width:80%"><strong itemprop="ratingValue">4</strong> di 5</span>
+														</div>
+													
+														<p class="meta">
+															<strong itemprop="author">Cobus Bester</strong> – <time itemprop="datePublished" datetime="2013-06-07T11:52:25+00:00">7 june 2013</time>:
+														</p>
+													
+														<div itemprop="description" class="description">
+															<p>Really happy with this Cip. The colors are great, and the wood quality is good too.</p>
+														</div>
+													</div>
+												</div>
+											</li>
+											
+											<li itemprop="reviews" itemscope="" itemtype="http://schema.org/Review" class="comment even thread-even depth-1" id="li-comment-59">
+												<div id="comment-59" class="comment_container">
+													<img alt="Cobus Bester" src="http://1.gravatar.com/avatar/3472757f6a3732d6470f98d7d7e9cece?s=60&amp;d=http%3A%2F%2F1.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D60&amp;r=G" class="avatar avatar-60 photo" height="60" width="60">
+													<div class="comment-text">
+														<div itemprop="reviewRating" itemscope="" itemtype="http://schema.org/Rating" class="star-rating" title="Valutato 4 su 5">
+															<span style="width:80%"><strong itemprop="ratingValue">4</strong> di 5</span>
+														</div>
+													
+														<p class="meta">
+															<strong itemprop="author">Cobus Bester</strong> – <time itemprop="datePublished" datetime="2013-06-07T12:19:25+00:00">7 june 2013</time>:
+														</p>
+													
+														<div itemprop="description" class="description">
+															<p>This is my favorite Cip. In fact, I’ve ordered 5 of them!</p>
+														</div>
+													</div>
+												</div>
+											</li>
+										</ol>
+									</div> 
+								
+									<div id="review_form_wrapper">
+										<div id="review_form">
+											<div id="respond" class="comment-respond">
+												<h3 id="reply-title" class="comment-reply-title">Writing a Review <small><a rel="nofollow" id="cancel-comment-reply-link" href="#respond" style="display:none;">Cancel Reply</a></small></h3>
+												<form action="#" method="post" id="commentform" class="comment-form">
+													<p class="comment-form-author"><label for="author">Nome <span class="required">*</span></label> <input id="author" name="author" type="text" value="" size="30" aria-required="true"></p>
+													<p class="comment-form-email"><label for="email">Email <span class="required">*</span></label> <input id="email" name="email" type="text" value="" size="30" aria-required="true"></p>
+													<p class="comment-form-rating"><label for="rating">Your Rating</label><p class="stars"><span><a class="star-1" href="#">1</a><a class="star-2" href="#">2</a><a class="star-3" href="#">3</a><a class="star-4" href="#">4</a><a class="star-5" href="#">5</a></span>
+													</p>
+													<select name="rating" id="rating" style="display: none;">
+														<option value="">Price…</option>
+														<option value="5">Perfect</option>
+														<option value="4">Good</option>
+														<option value="3">Sufficient</option>
+														<option value="2">Not bad</option>
+														<option value="1">Poor</option>
+													</select>
+													</p>
+													<p class="comment-form-comment">
+														<label for="comment">Your review</label>
+														<textarea id="comment" name="comment" cols="45" rows="8" aria-required="true"></textarea>
+													</p>
+													<p class="form-submit">
+														<input name="submit" type="submit" id="submit" value="Sent">
+														<input type="hidden" name="comment_post_ID" value="70" id="comment_post_ID">
+														<input type="hidden" name="comment_parent" id="comment_parent" value="0">
+													</p>
+												</form>
+											</div>
+										</div>
+									</div>
+									
+									<div class="clear"></div>
+								</div>
+							</div><!-- #tab-reviews -->
+				
+						</div><!-- .woocommerce-tabs -->
+						
+						<div class="related products">
+							<h2>Prodotti correlati</h2>
+							<ul class="products pure-g">
+								<li class="post-79 product type-product status-publish has-post-thumbnail first shipping-taxable purchasable product-type-simple product-cat-forniture instock pure-u-1 pure-u-sm-1-2 pure-u-lg-1-2 pure-u-xl-1-3 mm-color-three full-image same-height mm-product">
+									<a href="#">
+										<img width="300" height="300" src="images/test/design_300x300_7.jpg" class="attachment-shop_catalog wp-post-image" alt="">
+										<div class="shop-item-cont mm-pad-big">
+											<h3>Woo Logo</h3>
+											<span class="price"><span class="amount"> 47,00 €</span></span>
+										</div>
+									</a>
+									<a href="#" rel="nofollow" data-product_id="79" data-product_sku="" data-quantity="1" class="button add_to_cart_button product_type_simple mm-btn mm-btn-small mm-ripple">Buy Now</a>
+								</li>
+							
+								<li class="post-80 product type-product status-publish has-post-thumbnail first shipping-taxable purchasable product-type-simple product-cat-forniture instock pure-u-1 pure-u-sm-1-2 pure-u-lg-1-2 pure-u-xl-1-3 mm-color-three full-image same-height mm-product">
+									<a href="#">
+										<img width="300" height="300" src="images/test/design_300x300_4.jpg" class="attachment-shop_catalog wp-post-image" alt="">
+										<div class="shop-item-cont mm-pad-big">
+											<h3>Woo Logo</h3>
+											<span class="price"><span class="amount"> 156,00 €</span></span>
+										</div>
+									</a>
+									<a href="#" rel="nofollow" data-product_id="80" data-product_sku="" data-quantity="1" class="button add_to_cart_button product_type_simple mm-btn mm-btn-small mm-ripple">Buy Now</a>
+								</li>
+							</ul>
+						</div><!-- .related.products -->
+						
+						<meta itemprop="url" content="#">
+						
+					</div><!-- #product-70 -->
+				
+				</div><!-- end #content -->
+			
+			</main>
+		</div><!-- #primary -->
 		
-		</script>
-	</body>
+		<footer id="footer">
+			<div class="credits">
+				<p>Designed by <a href="#" title="">Agency</a>. All rights reserved.</p>
+			</div>
+		</footer>
+	
+	</div><!-- #page -->
+
+        
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="js/vendor/jquery-2.1.1.min.js"><\/script>')</script>
+    <script src="js/vendor/selectordie.min.js"></script>
+    <script src="js/vendor/owl.carousel.min.js"></script>
+    <script src="js/vendor/jquery.matchHeight.js"></script>
+    <script src="js/vendor/picturefill.min.js"></script>
+    <script src="js/scripts.js"></script>
+
+    <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+	<script>
+		(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+		m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+		})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+		ga('create', 'UA-XXXXX-X', 'auto');
+		ga('send', 'pageview');
+	</script>
+</body>
 </html>
