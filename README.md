@@ -28,3 +28,7 @@ Ho trovato online un template che si chiama _Amaranto_ che mi piaceva per come s
 Non essendo esperto di html ho preferito cercare un template già pronto e non crearlo da me.
 Ho modificato la pagina affinche permetta di scegliere il colore e ho aggiunto un link che manda al modello 3D del prodotto.
 Ho optato per questa scelta perchè non è detto che tutti gli utenti possiedano hardware o software per visuallizzare il modello.
+
+## File
+- index.html : contiene solo il template del sito
+- minipala.html : contiene il codice per la visualizzazione del modello
